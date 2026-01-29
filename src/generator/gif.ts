@@ -19,21 +19,22 @@ export interface GifOptions {
   /**
    * Generation method:
    * - 'montage': Static grid image using sharp (default, no external deps)
-   * - 'ffmpeg': Generate ffmpeg script for animated GIF (best quality, requires ffmpeg)
+   * - 'ffmpeg': Use ffmpeg scripts to generate animated GIF (best quality, requires ffmpeg)
    */
   method?: 'montage' | 'ffmpeg';
 }
 
 /**
- * Generate animated preview from screenshots
+ * Generate demo preview from screenshots
  *
  * Methods:
  * - 'montage': Static montage image using sharp (default, no external deps)
- * - 'ffmpeg': Generate ffmpeg script for GIF (best quality, requires ffmpeg)
+ * - 'ffmpeg': Use the generated ffmpeg scripts for animated GIF
  *
  * Always generates:
+ * - demo-montage.png (static grid image)
  * - animated-preview.html (interactive HTML player)
- * - generate-gif.sh / generate-gif.bat (ffmpeg scripts)
+ * - generate-gif.sh / generate-gif.bat (ffmpeg scripts for animated GIF)
  */
 export async function generateGif(
   session: DemoSession,
@@ -92,22 +93,21 @@ export async function generateGif(
   });
   await fs.writeFile(path.join(outputDir, 'generate-gif.bat'), batchScript, 'utf-8');
 
-  // Generate based on method
-  if (method === 'montage') {
-    try {
-      const montagePath = await generateMontage(screenshots, outputDir, { width });
-      if (montagePath) {
-        console.log(`Montage generated: ${montagePath}`);
-        return montagePath;
-      }
-    } catch (err) {
-      console.warn('Montage generation failed:', err);
+  // Generate montage (default)
+  try {
+    const montagePath = await generateMontage(screenshots, outputDir, { width });
+    if (montagePath) {
+      console.log(`Montage generated: ${montagePath}`);
+      console.log(`For animated GIF, run: ./generate-gif.sh (requires ffmpeg)`);
+      return montagePath;
     }
+  } catch (err) {
+    console.warn('Montage generation failed:', err);
   }
 
   // Return HTML preview as fallback
   console.log(`HTML preview generated: ${gifHtmlPath}`);
-  console.log(`To generate animated GIF, run: ./generate-gif.sh (requires ffmpeg)`);
+  console.log(`For animated GIF, run: ./generate-gif.sh (requires ffmpeg)`);
   return gifHtmlPath;
 }
 
