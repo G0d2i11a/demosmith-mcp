@@ -20,6 +20,7 @@ export async function executeWithEvidence<T>(
   const page = session.page!;
 
   const startTime = Date.now();
+  const videoStartMs = session.videoStartTime ? startTime - session.videoStartTime : undefined;
   let screenshotPath: string | undefined;
 
   // Take screenshot before action if enabled
@@ -42,12 +43,15 @@ export async function executeWithEvidence<T>(
     throw e;
   } finally {
     const duration = Date.now() - startTime;
+    const videoEndMs = session.videoStartTime ? Date.now() - session.videoStartTime : undefined;
 
     addStep({
       action: options.action,
       description: options.description,
       timestamp: new Date(),
       duration,
+      videoStartMs,
+      videoEndMs,
       details: options.details ?? {},
       evidence: {
         screenshotPath,

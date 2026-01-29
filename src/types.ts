@@ -19,6 +19,9 @@ export interface DemoSession {
   options: DemoSessionOptions;
   steps: DemoStep[];
 
+  // Video timing
+  videoStartTime?: number; // Date.now() when video recording started
+
   // Playwright instances (not serializable)
   browser?: Browser;
   context?: BrowserContext;
@@ -36,6 +39,10 @@ export interface DemoStep {
   description: string;
   timestamp: Date;
   duration: number;
+
+  // Video timing (ms from video start)
+  videoStartMs?: number;
+  videoEndMs?: number;
 
   details: {
     ref?: string;
@@ -77,6 +84,9 @@ export interface DemoDeliverables {
     guide: string;
     steps: string;
     narration?: string;
+    narrationJson?: string;
+    audioFile?: string;
+    videoWithAudio?: string;
     subtitleSrt?: string;
     subtitleVtt?: string;
     tutorial?: string;

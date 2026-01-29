@@ -26,12 +26,12 @@ function formatSrtTime(ms: number): string {
  * Next subtitle
  */
 export function generateSrt(session: DemoSession): string {
-  const timedNarration = generateTimedNarration(session);
+  const narrationData = generateTimedNarration(session);
   const lines: string[] = [];
 
-  timedNarration.forEach((item, index) => {
-    const startTime = formatSrtTime(item.timestamp);
-    const endTime = formatSrtTime(item.timestamp + item.duration);
+  narrationData.segments.forEach((item, index) => {
+    const startTime = formatSrtTime(item.startMs);
+    const endTime = formatSrtTime(item.endMs);
 
     lines.push(`${index + 1}`);
     lines.push(`${startTime} --> ${endTime}`);
@@ -47,17 +47,17 @@ export function generateSrt(session: DemoSession): string {
  * More modern format, supported by HTML5 video
  */
 export function generateVtt(session: DemoSession): string {
-  const timedNarration = generateTimedNarration(session);
+  const narrationData = generateTimedNarration(session);
   const lines: string[] = [];
 
   // VTT header
   lines.push('WEBVTT');
   lines.push('');
 
-  timedNarration.forEach((item, index) => {
+  narrationData.segments.forEach((item, index) => {
     // VTT uses different time format (HH:MM:SS.mmm with dot instead of comma)
-    const startTime = formatSrtTime(item.timestamp).replace(',', '.');
-    const endTime = formatSrtTime(item.timestamp + item.duration).replace(',', '.');
+    const startTime = formatSrtTime(item.startMs).replace(',', '.');
+    const endTime = formatSrtTime(item.endMs).replace(',', '.');
 
     lines.push(`${index + 1}`);
     lines.push(`${startTime} --> ${endTime}`);

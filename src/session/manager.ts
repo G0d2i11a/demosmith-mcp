@@ -47,6 +47,7 @@ export async function startSession(input: StartSessionInput): Promise<DemoSessio
     status: 'running',
     options,
     steps: [],
+    videoStartTime: Date.now(), // Record when session starts for video timing
     pages: new Map(),
     activePageId: 0,
     nextPageId: 1,

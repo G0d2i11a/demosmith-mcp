@@ -95,7 +95,7 @@ async function generateAnimatedGif(
 ): Promise<string | null> {
   // Import ffmpeg-static to get the bundled ffmpeg binary path
   const ffmpegStatic = await import('ffmpeg-static');
-  const ffmpegPath = ffmpegStatic.default;
+  const ffmpegPath = ffmpegStatic.default as unknown as string;
 
   if (!ffmpegPath) {
     throw new Error('ffmpeg-static binary not found');

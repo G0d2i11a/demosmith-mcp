@@ -14,12 +14,14 @@ An MCP (Model Context Protocol) server for automated demo recording with video, 
 - **Video Recording** - Automatic screen recording of browser sessions
 - **Screenshot Capture** - Automatic screenshots at each step
 - **Animated Cursor** - Smooth cursor animations with click effects and sounds
+- **TTS Narration** - AI-powered voiceover with multiple providers (OpenAI, ElevenLabs, Azure, Edge)
 - **Multiple Output Formats**:
   - Video (WebM)
+  - Video with Audio (MP4)
   - Playwright Trace (interactive replay)
   - Markdown Guide
   - JSON Steps
-  - Narration Script
+  - Narration Script + JSON (with timestamps)
   - Subtitles (SRT/VTT)
   - Interactive HTML Tutorial
   - GIF Preview
@@ -173,11 +175,14 @@ After ending a session, the following files are generated:
 ```
 output/
 ├── demo.webm              # Screen recording video
+├── demo-with-audio.mp4    # Video with TTS narration (if TTS enabled)
 ├── demo.gif               # Animated GIF preview
 ├── trace.zip              # Playwright trace (interactive replay)
 ├── guide.md               # Markdown documentation
 ├── steps.json             # Structured step data
 ├── narration.txt          # Voiceover script
+├── narration.json         # Timed narration for TTS APIs
+├── narration.mp3          # Generated audio (if TTS enabled)
 ├── subtitles.srt          # SRT subtitles
 ├── subtitles.vtt          # VTT subtitles
 ├── tutorial.html          # Interactive HTML tutorial
@@ -270,6 +275,65 @@ Use in demo:
 
 ```
 demosmith_start(url="...", title="...", storageState="auth.json")
+```
+
+## TTS Narration
+
+Generate AI voiceover for your demos by passing TTS options to `demosmith_end`:
+
+```
+demosmith_end(tts={
+  provider: "openai",
+  apiKey: "sk-...",
+  voice: "alloy"
+})
+```
+
+### Supported TTS Providers
+
+| Provider | API Key Required | Voices | Notes |
+|----------|-----------------|--------|-------|
+| `openai` | Yes | alloy, echo, fable, onyx, nova, shimmer | Best quality |
+| `elevenlabs` | Yes | Various voice IDs | Most natural |
+| `azure` | Yes | en-US-JennyNeural, etc. | SSML support |
+| `edge` | No | en-US-AriaNeural, etc. | Free, requires `edge-tts` CLI |
+
+### TTS Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `provider` | string | TTS provider (openai, elevenlabs, azure, edge) |
+| `apiKey` | string | API key (not needed for edge) |
+| `voice` | string | Voice ID or name |
+| `language` | string | Language code (e.g., en-US, zh-CN) |
+| `speed` | number | Speech speed multiplier |
+
+### Environment Variables
+
+For Azure TTS, set the region:
+
+```bash
+export AZURE_SPEECH_REGION=eastus
+```
+
+### Narration JSON Format
+
+The generated `narration.json` contains timed segments for custom TTS integration:
+
+```json
+{
+  "title": "Login Demo",
+  "totalDurationMs": 15000,
+  "segments": [
+    {
+      "stepId": 1,
+      "startMs": 2000,
+      "endMs": 4500,
+      "durationMs": 2500,
+      "text": "Click the login button"
+    }
+  ]
+}
 ```
 
 ## Development

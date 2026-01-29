@@ -1,6 +1,26 @@
 import type { DemoSession, DemoStep } from '../types.js';
 
 /**
+ * Narration segment with timing for TTS
+ */
+export interface NarrationSegment {
+  stepId: number;
+  startMs: number;
+  endMs: number;
+  durationMs: number;
+  text: string;
+}
+
+/**
+ * Full narration data for TTS generation
+ */
+export interface NarrationData {
+  title: string;
+  totalDurationMs: number;
+  segments: NarrationSegment[];
+}
+
+/**
  * Generate a narration script for voiceover
  */
 export function generateNarrationScript(session: DemoSession): string {
@@ -92,59 +112,65 @@ function stepToNarration(step: DemoStep): string {
 }
 
 /**
- * Generate narration with timing hints for TTS
+ * Generate narration with timing from actual video timestamps
  */
-export function generateTimedNarration(session: DemoSession): Array<{
-  stepId: number;
-  timestamp: number;
-  duration: number;
-  text: string;
-}> {
-  const timedNarration: Array<{
-    stepId: number;
-    timestamp: number;
-    duration: number;
-    text: string;
-  }> = [];
+export function generateTimedNarration(session: DemoSession): NarrationData {
+  const segments: NarrationSegment[] = [];
 
-  // Calculate cumulative time
-  let cumulativeTime = 0;
+  // Calculate total duration from last step
+  const lastStep = session.steps[session.steps.length - 1];
+  const totalDurationMs = lastStep?.videoEndMs ??
+    session.steps.reduce((sum, s) => sum + s.duration, 0) + 5000;
 
-  // Add intro
-  timedNarration.push({
+  // Add intro (first 2 seconds)
+  const introText = `Welcome! In this tutorial, I'll show you how to ${session.title.toLowerCase()}. Let's get started.`;
+  segments.push({
     stepId: 0,
-    timestamp: 0,
-    duration: 3000,
-    text: `Welcome! In this tutorial, I'll show you how to ${session.title.toLowerCase()}. Let's get started.`,
+    startMs: 0,
+    endMs: 2000,
+    durationMs: 2000,
+    text: introText,
   });
-  cumulativeTime = 3000;
 
-  // Add steps
+  // Add steps with actual video timestamps
   for (const step of session.steps) {
     const narration = stepToNarration(step);
     if (narration) {
-      // Estimate duration based on text length (roughly 150 words per minute)
-      const wordCount = narration.split(/\s+/).length;
-      const estimatedDuration = Math.max(2000, (wordCount / 150) * 60 * 1000);
+      const startMs = step.videoStartMs ?? segments[segments.length - 1]?.endMs ?? 2000;
+      const endMs = step.videoEndMs ?? startMs + step.duration;
 
-      timedNarration.push({
+      segments.push({
         stepId: step.id,
-        timestamp: cumulativeTime,
-        duration: Math.round(estimatedDuration),
+        startMs,
+        endMs,
+        durationMs: endMs - startMs,
         text: narration,
       });
-
-      cumulativeTime += step.duration + 500; // Add step duration + pause
     }
   }
 
-  // Add outro
-  timedNarration.push({
+  // Add outro (last 3 seconds)
+  const outroStart = segments[segments.length - 1]?.endMs ?? totalDurationMs - 3000;
+  const outroText = `And that's it! You've successfully completed ${session.title.toLowerCase()}. Thanks for watching!`;
+  segments.push({
     stepId: -1,
-    timestamp: cumulativeTime,
-    duration: 4000,
-    text: `And that's it! You've successfully completed ${session.title.toLowerCase()}. Thanks for watching!`,
+    startMs: outroStart,
+    endMs: totalDurationMs,
+    durationMs: totalDurationMs - outroStart,
+    text: outroText,
   });
 
-  return timedNarration;
+  return {
+    title: session.title,
+    totalDurationMs,
+    segments,
+  };
+}
+
+/**
+ * Generate narration JSON file for TTS APIs
+ */
+export function generateNarrationJson(session: DemoSession): string {
+  const data = generateTimedNarration(session);
+  return JSON.stringify(data, null, 2);
 }

@@ -3,15 +3,26 @@ import * as path from 'path';
 import type { DemoSession, DemoDeliverables } from '../types.js';
 import { generateMarkdownGuide } from './markdown.js';
 import { generateStepsJson } from './json.js';
-import { generateNarrationScript } from './narration.js';
+import { generateNarrationScript, generateNarrationJson, generateTimedNarration } from './narration.js';
 import { generateSrt, generateVtt } from './subtitle.js';
 import { generateGif } from './gif.js';
 import { generateHtmlTutorial } from './html-tutorial.js';
+import { generateTTS, mergeAudioWithVideo, type TTSOptions } from './tts.js';
+
+/**
+ * Packager options
+ */
+export interface PackagerOptions {
+  tts?: TTSOptions;
+}
 
 /**
  * Package all deliverables for a completed demo session
  */
-export async function packageDeliverables(session: DemoSession): Promise<DemoDeliverables> {
+export async function packageDeliverables(
+  session: DemoSession,
+  options: PackagerOptions = {}
+): Promise<DemoDeliverables> {
   const outputDir = session.options.outputDir;
 
   // Generate and write Markdown guide
@@ -28,6 +39,11 @@ export async function packageDeliverables(session: DemoSession): Promise<DemoDel
   const narrationContent = generateNarrationScript(session);
   const narrationPath = path.join(outputDir, 'narration.txt');
   await fs.writeFile(narrationPath, narrationContent, 'utf-8');
+
+  // Generate and write narration JSON (for TTS APIs)
+  const narrationJsonContent = generateNarrationJson(session);
+  const narrationJsonPath = path.join(outputDir, 'narration.json');
+  await fs.writeFile(narrationJsonPath, narrationJsonContent, 'utf-8');
 
   // Generate and write SRT subtitles
   const srtContent = generateSrt(session);
@@ -89,6 +105,27 @@ export async function packageDeliverables(session: DemoSession): Promise<DemoDel
     // No trace
   }
 
+  // Generate TTS audio if options provided
+  let audioPath: string | undefined;
+  let videoWithAudioPath: string | undefined;
+
+  if (options.tts) {
+    const narrationData = generateTimedNarration(session);
+    audioPath = await generateTTS(narrationData, outputDir, options.tts) || undefined;
+
+    // Merge audio with video if both exist
+    if (audioPath && videoPath) {
+      try {
+        videoWithAudioPath = path.join(outputDir, 'demo-with-audio.mp4');
+        await mergeAudioWithVideo(videoPath, audioPath, videoWithAudioPath);
+        console.log(`Video with audio generated: ${videoWithAudioPath}`);
+      } catch (err) {
+        console.warn('Failed to merge audio with video:', err);
+        videoWithAudioPath = undefined;
+      }
+    }
+  }
+
   const successCount = session.steps.filter(s => s.success).length;
   const totalDuration = session.steps.reduce((sum, s) => sum + s.duration, 0);
 
@@ -102,6 +139,9 @@ export async function packageDeliverables(session: DemoSession): Promise<DemoDel
       guide: guidePath,
       steps: stepsPath,
       narration: narrationPath,
+      narrationJson: narrationJsonPath,
+      audioFile: audioPath,
+      videoWithAudio: videoWithAudioPath,
       subtitleSrt: srtPath,
       subtitleVtt: vttPath,
       tutorial: htmlPath,
