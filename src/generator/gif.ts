@@ -10,17 +10,30 @@ export interface GifOptions {
   frameDelay?: number;
   /** Output width (default: 800) */
   width?: number;
-  /** Output height (default: 600) */
+  /** Output height (default: auto) */
   height?: number;
   /** Quality 1-20, lower is better (default: 10) */
   quality?: number;
   /** Number of loops, 0 = infinite (default: 0) */
   loops?: number;
+  /**
+   * Generation method:
+   * - 'montage': Static grid image using sharp (default, no external deps)
+   * - 'ffmpeg': Generate ffmpeg script for animated GIF (best quality, requires ffmpeg)
+   */
+  method?: 'montage' | 'ffmpeg';
 }
 
 /**
- * Generate an animated GIF from screenshots
- * Uses external ffmpeg for reliable GIF creation
+ * Generate animated preview from screenshots
+ *
+ * Methods:
+ * - 'montage': Static montage image using sharp (default, no external deps)
+ * - 'ffmpeg': Generate ffmpeg script for GIF (best quality, requires ffmpeg)
+ *
+ * Always generates:
+ * - animated-preview.html (interactive HTML player)
+ * - generate-gif.sh / generate-gif.bat (ffmpeg scripts)
  */
 export async function generateGif(
   session: DemoSession,
@@ -32,6 +45,7 @@ export async function generateGif(
     width = 800,
     quality = 10,
     loops = 0,
+    method = 'montage',
   } = options;
 
   // Collect screenshot paths
@@ -56,33 +70,109 @@ export async function generateGif(
     return null;
   }
 
-  // Create a simple HTML-based animated preview as fallback
-  // (True GIF generation would require native dependencies like sharp/gifencoder)
+  // Always generate HTML preview
   const gifHtmlPath = path.join(outputDir, 'animated-preview.html');
   const gifHtml = generateAnimatedHtmlPreview(session, screenshots, frameDelay);
   await fs.writeFile(gifHtmlPath, gifHtml, 'utf-8');
 
-  // Also create a ffmpeg command file for users who have ffmpeg installed
+  // Always generate ffmpeg scripts (for users who want animated GIF later)
   const ffmpegScript = generateFfmpegScript(screenshots, outputDir, {
     frameDelay,
     width,
     quality,
     loops,
   });
-  const scriptPath = path.join(outputDir, 'generate-gif.sh');
-  await fs.writeFile(scriptPath, ffmpegScript, 'utf-8');
+  await fs.writeFile(path.join(outputDir, 'generate-gif.sh'), ffmpegScript, 'utf-8');
 
-  // Create Windows batch version
   const batchScript = generateFfmpegBatch(screenshots, outputDir, {
     frameDelay,
     width,
     quality,
     loops,
   });
-  const batchPath = path.join(outputDir, 'generate-gif.bat');
-  await fs.writeFile(batchPath, batchScript, 'utf-8');
+  await fs.writeFile(path.join(outputDir, 'generate-gif.bat'), batchScript, 'utf-8');
 
+  // Generate based on method
+  if (method === 'montage') {
+    try {
+      const montagePath = await generateMontage(screenshots, outputDir, { width });
+      if (montagePath) {
+        console.log(`Montage generated: ${montagePath}`);
+        return montagePath;
+      }
+    } catch (err) {
+      console.warn('Montage generation failed:', err);
+    }
+  }
+
+  // Return HTML preview as fallback
+  console.log(`HTML preview generated: ${gifHtmlPath}`);
+  console.log(`To generate animated GIF, run: ./generate-gif.sh (requires ffmpeg)`);
   return gifHtmlPath;
+}
+
+/**
+ * Generate a montage image (grid of screenshots) using sharp
+ * No external dependencies required - sharp is prebuilt
+ */
+async function generateMontage(
+  screenshots: string[],
+  outputDir: string,
+  options: { width: number }
+): Promise<string | null> {
+  try {
+    const sharp = (await import('sharp')).default;
+
+    // Calculate grid layout (2 columns)
+    const cols = 2;
+    const rows = Math.ceil(screenshots.length / cols);
+    const thumbWidth = Math.floor(options.width / cols);
+
+    // Get aspect ratio from first image
+    const firstMeta = await sharp(screenshots[0]).metadata();
+    const aspectRatio = (firstMeta.height || 600) / (firstMeta.width || 800);
+    const thumbHeight = Math.round(thumbWidth * aspectRatio);
+
+    // Resize all screenshots
+    const resizedBuffers: Buffer[] = [];
+    for (const screenshot of screenshots) {
+      const resized = await sharp(screenshot)
+        .resize(thumbWidth, thumbHeight, { fit: 'cover' })
+        .png()
+        .toBuffer();
+      resizedBuffers.push(resized);
+    }
+
+    // Create composite
+    const composites: { input: Buffer; left: number; top: number }[] = [];
+    for (let i = 0; i < resizedBuffers.length; i++) {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      composites.push({
+        input: resizedBuffers[i],
+        left: col * thumbWidth,
+        top: row * thumbHeight,
+      });
+    }
+
+    const montagePath = path.join(outputDir, 'demo-montage.png');
+    await sharp({
+      create: {
+        width: cols * thumbWidth,
+        height: rows * thumbHeight,
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 1 },
+      },
+    })
+      .composite(composites)
+      .png()
+      .toFile(montagePath);
+
+    return montagePath;
+  } catch (err) {
+    console.warn('Sharp not available or failed:', err);
+    return null;
+  }
 }
 
 /**
@@ -244,24 +334,27 @@ function generateFfmpegScript(
   options: { frameDelay: number; width: number; quality: number; loops: number }
 ): string {
   const fps = 1000 / options.frameDelay;
-  const inputList = screenshots.map((s, i) => `file '${s}'`).join('\n');
 
   return `#!/bin/bash
 # Generate GIF from screenshots using ffmpeg
 # Requires: ffmpeg installed
+# Usage: cd examples/github-login-demo && ./generate-gif.sh
+
+cd "$(dirname "$0")"
 
 # Create input file list
-cat > "${outputDir}/frames.txt" << 'EOF'
-${screenshots.map(s => `file '${s}'\nduration ${options.frameDelay / 1000}`).join('\n')}
+cat > frames.txt << 'EOF'
+${screenshots.map(s => `file 'assets/${path.basename(s)}'\nduration ${options.frameDelay / 1000}`).join('\n')}
 EOF
 
 # Generate GIF with palette for better quality
-ffmpeg -f concat -safe 0 -i "${outputDir}/frames.txt" \\
-  -vf "fps=${fps},scale=${options.width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" \\
+ffmpeg -f concat -safe 0 -i frames.txt \\
+  -vf "fps=${fps.toFixed(2)},scale=${options.width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" \\
   -loop ${options.loops} \\
-  "${outputDir}/demo.gif"
+  demo.gif
 
-echo "GIF generated: ${outputDir}/demo.gif"
+rm frames.txt
+echo "GIF generated: demo.gif"
 `;
 }
 
@@ -278,19 +371,23 @@ function generateFfmpegBatch(
   return `@echo off
 REM Generate GIF from screenshots using ffmpeg
 REM Requires: ffmpeg installed and in PATH
+REM Usage: cd examples\\github-login-demo && generate-gif.bat
+
+cd /d "%~dp0"
 
 echo Creating frames list...
 (
-${screenshots.map(s => `echo file '${s.replace(/\\/g, '/')}'\necho duration ${options.frameDelay / 1000}`).join('\n')}
-) > "${outputDir.replace(/\\/g, '/')}/frames.txt"
+${screenshots.map(s => `echo file 'assets/${path.basename(s)}'\necho duration ${options.frameDelay / 1000}`).join('\n')}
+) > frames.txt
 
 echo Generating GIF...
-ffmpeg -f concat -safe 0 -i "${outputDir.replace(/\\/g, '/')}/frames.txt" ^
-  -vf "fps=${fps},scale=${options.width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" ^
+ffmpeg -f concat -safe 0 -i frames.txt ^
+  -vf "fps=${fps.toFixed(2)},scale=${options.width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" ^
   -loop ${options.loops} ^
-  "${outputDir.replace(/\\/g, '/')}/demo.gif"
+  demo.gif
 
-echo GIF generated: ${outputDir}\\demo.gif
+del frames.txt
+echo GIF generated: demo.gif
 pause
 `;
 }
