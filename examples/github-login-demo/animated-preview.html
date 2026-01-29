@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitHub Login Demo - Animated Preview</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1a1a2e;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    h1 {
+      color: #eee;
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    .player {
+      position: relative;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    }
+    .player img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #4361ee;
+      color: white;
+      transition: background 0.2s;
+    }
+    button:hover { background: #3a56d4; }
+    button:disabled { background: #666; cursor: not-allowed; }
+    .step-indicator {
+      color: #aaa;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+    .step-description {
+      color: #fff;
+      margin-top: 10px;
+      font-size: 16px;
+      max-width: 600px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <h1>GitHub Login Demo</h1>
+  <div class="player">
+    <img id="frame" src="assets/step-001.png" alt="Demo frame">
+  </div>
+  <div class="controls">
+    <button id="prev">← Previous</button>
+    <button id="playPause">⏸ Pause</button>
+    <button id="next">Next →</button>
+  </div>
+  <div class="step-indicator">
+    Step <span id="current">1</span> of 8
+  </div>
+  <div class="step-description" id="description"></div>
+
+  <script>
+    const frames = ["assets/step-001.png","assets/step-002.png","assets/step-003.png","assets/step-004.png","assets/step-005.png","assets/step-006.png","assets/step-007.png","assets/step-008.png"];
+    const descriptions = ["Open GitHub login page","Enter username or email address","Enter password","Hover over Sign in button","Login form filled and ready to submit","Scroll down to see more options","Press Tab to navigate","Verify GitHub login page"];
+    const frameDelay = 1500;
+    let currentFrame = 0;
+    let isPlaying = true;
+    let intervalId;
+
+    const img = document.getElementById('frame');
+    const currentSpan = document.getElementById('current');
+    const descDiv = document.getElementById('description');
+    const playPauseBtn = document.getElementById('playPause');
+    const prevBtn = document.getElementById('prev');
+    const nextBtn = document.getElementById('next');
+
+    function updateFrame() {
+      img.src = frames[currentFrame];
+      currentSpan.textContent = currentFrame + 1;
+      descDiv.textContent = descriptions[currentFrame] || '';
+    }
+
+    function nextFrame() {
+      currentFrame = (currentFrame + 1) % frames.length;
+      updateFrame();
+    }
+
+    function prevFrame() {
+      currentFrame = (currentFrame - 1 + frames.length) % frames.length;
+      updateFrame();
+    }
+
+    function togglePlay() {
+      isPlaying = !isPlaying;
+      playPauseBtn.textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+      if (isPlaying) {
+        intervalId = setInterval(nextFrame, frameDelay);
+      } else {
+        clearInterval(intervalId);
+      }
+    }
+
+    // Start autoplay
+    intervalId = setInterval(nextFrame, frameDelay);
+    updateFrame();
+
+    playPauseBtn.addEventListener('click', togglePlay);
+    prevBtn.addEventListener('click', () => { prevFrame(); });
+    nextBtn.addEventListener('click', () => { nextFrame(); });
+
+    // Keyboard controls
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') prevFrame();
+      if (e.key === 'ArrowRight') nextFrame();
+      if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+    });
+  </script>
+</body>
+</html>

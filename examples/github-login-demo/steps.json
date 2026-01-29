@@ -1,0 +1,130 @@
+{
+  "sessionId": "github-demo",
+  "title": "GitHub Login Demo",
+  "startUrl": "https://github.com/login",
+  "startedAt": "2026-01-29T12:41:24.275Z",
+  "completedAt": "2026-01-29T12:41:24.276Z",
+  "summary": {
+    "totalSteps": 8,
+    "successCount": 8,
+    "failureCount": 0,
+    "totalDuration": 4000
+  },
+  "steps": [
+    {
+      "id": 1,
+      "action": "navigate",
+      "description": "Open GitHub login page",
+      "timestamp": "2026-01-29T12:41:16.952Z",
+      "duration": 500,
+      "details": {
+        "url": "https://github.com/login"
+      },
+      "evidence": {
+        "screenshotPath": "assets/step-001.png"
+      },
+      "success": true
+    },
+    {
+      "id": 2,
+      "action": "fill",
+      "description": "Enter username or email address",
+      "timestamp": "2026-01-29T12:41:19.837Z",
+      "duration": 500,
+      "details": {
+        "ref": "login_field",
+        "value": "demo-user@example.com"
+      },
+      "evidence": {
+        "screenshotPath": "assets/step-002.png"
+      },
+      "success": true
+    },
+    {
+      "id": 3,
+      "action": "fill",
+      "description": "Enter password",
+      "timestamp": "2026-01-29T12:41:21.437Z",
+      "duration": 500,
+      "details": {
+        "ref": "password",
+        "value": "••••••••••••"
+      },
+      "evidence": {
+        "screenshotPath": "assets/step-003.png"
+      },
+      "success": true
+    },
+    {
+      "id": 4,
+      "action": "hover",
+      "description": "Hover over Sign in button",
+      "timestamp": "2026-01-29T12:41:22.455Z",
+      "duration": 500,
+      "details": {
+        "ref": "submit"
+      },
+      "evidence": {
+        "screenshotPath": "assets/step-004.png"
+      },
+      "success": true
+    },
+    {
+      "id": 5,
+      "action": "screenshot",
+      "description": "Login form filled and ready to submit",
+      "timestamp": "2026-01-29T12:41:22.509Z",
+      "duration": 500,
+      "details": {},
+      "evidence": {
+        "screenshotPath": "assets/step-005.png"
+      },
+      "success": true
+    },
+    {
+      "id": 6,
+      "action": "scroll",
+      "description": "Scroll down to see more options",
+      "timestamp": "2026-01-29T12:41:22.883Z",
+      "duration": 500,
+      "details": {
+        "direction": "down",
+        "amount": 150
+      },
+      "evidence": {
+        "screenshotPath": "assets/step-006.png"
+      },
+      "success": true
+    },
+    {
+      "id": 7,
+      "action": "pressKey",
+      "description": "Press Tab to navigate",
+      "timestamp": "2026-01-29T12:41:23.307Z",
+      "duration": 500,
+      "details": {
+        "key": "Tab"
+      },
+      "evidence": {
+        "screenshotPath": "assets/step-007.png"
+      },
+      "success": true
+    },
+    {
+      "id": 8,
+      "action": "assert",
+      "description": "Verify GitHub login page",
+      "timestamp": "2026-01-29T12:41:23.376Z",
+      "duration": 500,
+      "details": {
+        "type": "title",
+        "expected": "GitHub",
+        "actual": "Sign in to GitHub · GitHub"
+      },
+      "evidence": {
+        "screenshotPath": "assets/step-008.png"
+      },
+      "success": true
+    }
+  ]
+}

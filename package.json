@@ -1,0 +1,40 @@
+{
+  "name": "demosmith-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for automated demo recording with video, documentation, and screenshot generation",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "demosmith-mcp": "dist/index.js",
+    "demosmith": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "cli": "node dist/cli.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "playwright",
+    "demo",
+    "documentation",
+    "automation",
+    "video-recording"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.2",
+    "playwright": "^1.40.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "canvas": "^3.2.1",
+    "gif-encoder-2": "^1.0.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

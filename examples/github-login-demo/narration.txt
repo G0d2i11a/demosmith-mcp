@@ -1,0 +1,33 @@
+=== GitHub Login Demo ===
+
+Welcome! In this tutorial, I'll show you how to github login demo.
+
+Let's get started.
+
+[Step 1]
+First, let's navigate to the page. Open GitHub login page
+
+[Step 2]
+Enter username or email address. I'll type "demo-user@example.co...".
+
+[Step 3]
+Enter password. I'll type "••••••••••••".
+
+[Step 4]
+Hover over Sign in button
+
+[Step 6]
+Let me scroll down to show you more.
+
+[Step 7]
+Press Tab to navigate
+
+[Step 8]
+Verify GitHub login page
+
+---
+
+And that's it! You've successfully completed github login demo.
+
+If you have any questions, feel free to reach out.
+Thanks for watching!
