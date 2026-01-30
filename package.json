@@ -40,14 +40,14 @@
     "url": "https://github.com/G0d2i11a/demosmith-mcp/issues"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.25.2",
-    "ffmpeg-static": "^5.2.0",
-    "playwright": "^1.40.0",
-    "zod": "^3.24.1"
+    "@modelcontextprotocol/sdk": "^1.25.3",
+    "ffmpeg-static": "^5.3.0",
+    "playwright": "^1.58.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@types/node": "^22.10.5",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "@types/node": "^22.19.7",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }
